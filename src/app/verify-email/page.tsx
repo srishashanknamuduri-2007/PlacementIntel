@@ -35,7 +35,7 @@ function VerifyEmailContent() {
         setRegNo(data.register_number);
       } catch (err: any) {
         setErrorMessage(err.message);
-      } font-medium {
+      } finally {
         setLoading(false);
       }
     };
