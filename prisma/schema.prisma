@@ -1,0 +1,185 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  STUDENT
+  TPO_ADMIN
+  COLLEGE_ADMIN
+}
+
+enum SkillCategory {
+  LANGUAGE
+  FRAMEWORK
+  TOOL
+  SOFT_SKILL
+}
+
+enum Proficiency {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+model User {
+  id                 String          @id @default(uuid())
+  role               Role            @default(STUDENT)
+  register_number    String          @unique
+  college_email      String          @unique
+  password_hash      String
+  email_verified     Boolean         @default(false)
+  verification_token String?
+  reset_token        String?
+  created_at         DateTime        @default(now())
+  student_profile    StudentProfile?
+}
+
+model StudentProfile {
+  id                   String              @id @default(uuid())
+  user_id              String              @unique
+  user                 User                @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  full_name            String
+  register_number      String              @unique
+  department           String
+  year_or_batch        String
+  cgpa_overall         Float?
+  phone                String?
+  personal_email       String?
+  linkedin_url         String?
+  github_url           String?
+  personal_website_url String?
+  address              String?
+  profile_photo_url    String?
+  bio                  String?
+  created_at           DateTime            @default(now())
+  updated_at           DateTime            @updatedAt
+
+  visibilities         ProfileVisibility[]
+  education            Education?
+  semester_cgpas       SemesterCGPA[]
+  student_skills       StudentSkill[]
+  projects             Project[]
+  certifications       Certification[]
+  experiences          Experience[]
+  achievements         Achievement[]
+  extracurriculars     Extracurricular[]
+}
+
+model ProfileVisibility {
+  id           String         @id @default(uuid())
+  student_id   String
+  student      StudentProfile @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  section_name String
+  is_public    Boolean        @default(false)
+
+  @@unique([student_id, section_name])
+}
+
+model Education {
+  id                                   String         @id @default(uuid())
+  student_id                           String         @unique
+  student                              StudentProfile @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  tenth_percentage                     Float
+  tenth_board                          String
+  twelfth_percentage_or_diploma_details String
+  twelfth_board                        String
+  current_degree                       String
+  specialization                       String
+  expected_graduation_year             Int
+}
+
+model SemesterCGPA {
+  id              String         @id @default(uuid())
+  student_id      String
+  student         StudentProfile @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  semester_number Int
+  cgpa            Float
+
+  @@unique([student_id, semester_number])
+}
+
+model Skill {
+  id             String         @id @default(uuid())
+  name           String         @unique
+  category       SkillCategory
+  student_skills StudentSkill[]
+}
+
+model StudentSkill {
+  id          String         @id @default(uuid())
+  student_id  String
+  student     StudentProfile @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  skill_id    String
+  skill       Skill          @relation(fields: [skill_id], references: [id], onDelete: Cascade)
+  proficiency Proficiency    @default(INTERMEDIATE)
+
+  @@unique([student_id, skill_id])
+}
+
+model Project {
+  id             String         @id @default(uuid())
+  student_id     String
+  student        StudentProfile @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  title          String
+  description    String
+  role           String
+  tech_stack     String
+  github_url     String?
+  live_url       String?
+  duration       String?
+  team_size      Int?
+  key_outcomes   String?
+  ai_score       Float?
+  ai_suggestions String?
+  created_at     DateTime       @default(now())
+}
+
+model Certification {
+  id             String         @id @default(uuid())
+  student_id     String
+  student        StudentProfile @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  name           String
+  issuer         String
+  date           String
+  credential_id  String?
+  credential_url String?
+  expiry_date    String?
+}
+
+model Experience {
+  id               String         @id @default(uuid())
+  student_id       String
+  student          StudentProfile @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  org              String
+  role             String
+  duration         String
+  location         String?
+  description      String
+  key_contributions String?
+}
+
+model Achievement {
+  id           String         @id @default(uuid())
+  student_id   String
+  student      StudentProfile @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  title        String
+  description  String
+  date         String?
+  issuing_body String?
+}
+
+model Extracurricular {
+  id           String         @id @default(uuid())
+  student_id   String
+  student      StudentProfile @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  activity     String
+  role         String
+  organization String?
+  duration     String?
+  description  String?
+}

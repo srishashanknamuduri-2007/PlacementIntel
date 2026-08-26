@@ -1,0 +1,14 @@
+.env
+.env.*
+.dev-db.json
+
+node_modules/
+.next/
+
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+dist/
+build/
