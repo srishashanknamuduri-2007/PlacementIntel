@@ -489,15 +489,28 @@ class InMemoryStore {
     return (await this.getStudentProfileByUserId(profile.user_id, profile.register_number))!;
   }
 
-  async updateEducation(userId: string, data: Omit<Education, 'id' | 'student_id'>): Promise<Education> {
-    const profile = await this.getStudentProfileByUserId(userId);
-    if (!profile) throw new Error('Student profile not found');
-    const existing = this.educations.get(profile.id);
-    const edu: Education = { id: existing?.id || crypto.randomUUID(), student_id: profile.id, ...data };
-    this.educations.set(profile.id, edu);
-    this.persist();
-    return edu;
-  }
+  async updateEducation(
+  userId: string,
+  data: Partial<Omit<Education, 'id' | 'student_id'>>
+): Promise<Education> {
+  const profile = await this.getStudentProfileByUserId(userId);
+  if (!profile) throw new Error('Student profile not found');
+
+  const existing = this.educations.get(profile.id);
+
+  const edu: Education = {
+    id: existing?.id || crypto.randomUUID(),
+    student_id: profile.id,
+    ...(existing || {}),
+    ...data,
+  };
+
+  this.educations.set(profile.id, edu);
+  this.persist();
+
+  return edu;
+}
+
 
   async updateSemesterCGPAs(userId: string, semesters: Omit<SemesterCGPA, 'id' | 'student_id'>[]): Promise<SemesterCGPA[]> {
     const profile = await this.getStudentProfileByUserId(userId);
