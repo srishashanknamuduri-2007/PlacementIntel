@@ -247,7 +247,7 @@ class InMemoryStore {
         title: 'Placement Intelligence Platform',
         description: 'Single structured profile platform generating ATS resumes, portfolios, and T&P analytics.',
         role: 'Lead Architect',
-        tech_stack: 'Next.js, Tailwind, PostgreSQL, Prisma',
+        tech_stack: ['Next.js', 'Tailwind', 'PostgreSQL', 'Prisma'],
         github_url: 'https://github.com/alexrivera/placement-intel',
         live_url: 'https://placement-intel.vercel.app',
         duration: '2 Months',
@@ -715,7 +715,7 @@ class PrismaDBStore {
       projects: (p.projects ?? []).map((proj: any) => ({
         id: proj.id, student_id: proj.student_id,
         title: proj.title, description: proj.description, role: proj.role,
-        tech_stack: proj.tech_stack,
+        tech_stack: techStackArr(proj),
         github_url: proj.github_url ?? null, live_url: proj.live_url ?? null,
         duration: proj.duration ?? null, team_size: proj.team_size ?? null,
         key_outcomes: proj.key_outcomes ?? null,
@@ -961,7 +961,7 @@ class PrismaDBStore {
           key_outcomes: p.key_outcomes || null,
         },
       });
-      results.push({ id: proj.id, student_id: proj.student_id, title: proj.title, description: proj.description, role: proj.role, tech_stack: proj.tech_stack, github_url: proj.github_url ?? null, live_url: proj.live_url ?? null, duration: proj.duration ?? null, team_size: proj.team_size ?? null, key_outcomes: proj.key_outcomes ?? null, ai_score: null, ai_suggestions: null, created_at: proj.created_at.toISOString() });
+      results.push({ id: proj.id, student_id: proj.student_id, title: proj.title, description: proj.description, role: proj.role, tech_stack: techStack.split(',').map((t: string) => t.trim()).filter(Boolean), github_url: proj.github_url ?? null, live_url: proj.live_url ?? null, duration: proj.duration ?? null, team_size: proj.team_size ?? null, key_outcomes: proj.key_outcomes ?? null, ai_score: null, ai_suggestions: null, created_at: proj.created_at.toISOString() });
     }
     return results;
   }
