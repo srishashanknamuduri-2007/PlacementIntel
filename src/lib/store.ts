@@ -537,11 +537,12 @@ class InMemoryStore {
     return newSkill;
   }
 
-  async updateStudentSkills(userId: string, skillInputs: { name: string; category: Skill['category']; proficiency: StudentSkill['proficiency'] }[]): Promise<StudentSkill[]> {
+  async updateStudentSkills(userId: string, skillInputs: { name?: string; category?: Skill['category']; proficiency?: StudentSkill['proficiency'] }[]): Promise<StudentSkill[]> {
     const profile = await this.getStudentProfileByUserId(userId);
     if (!profile) throw new Error('Student profile not found');
     const list: StudentSkill[] = [];
     for (const item of skillInputs) {
+      if (!item.name || !item.category || !item.proficiency) continue;
       const skill = await this.addOrGetSkill(item.name, item.category);
       list.push({ id: crypto.randomUUID(), student_id: profile.id, skill_id: skill.id, skill, proficiency: item.proficiency });
     }
@@ -550,37 +551,93 @@ class InMemoryStore {
     return list;
   }
 
-  async updateProjects(userId: string, projectInputs: Omit<Project, 'student_id'>[]): Promise<Project[]> {
+  async updateProjects(userId: string, projectInputs: Partial<Omit<Project, 'student_id'>>[]): Promise<Project[]> {
     const profile = await this.getStudentProfileByUserId(userId);
     if (!profile) throw new Error('Student profile not found');
-    const list = projectInputs.map((p) => ({ ...p, id: p.id || crypto.randomUUID(), student_id: profile.id, created_at: p.created_at || new Date().toISOString() }));
+    const list: Project[] = [];
+    for (const p of projectInputs) {
+      if (!p.title || !p.description || !p.role || !p.tech_stack) continue;
+      list.push({
+        id: p.id || crypto.randomUUID(),
+        student_id: profile.id,
+        title: p.title,
+        description: p.description,
+        role: p.role,
+        tech_stack: p.tech_stack,
+        github_url: p.github_url ?? null,
+        live_url: p.live_url ?? null,
+        duration: p.duration ?? null,
+        team_size: p.team_size ?? null,
+        key_outcomes: p.key_outcomes ?? null,
+        ai_score: p.ai_score ?? null,
+        ai_suggestions: p.ai_suggestions ?? null,
+        created_at: p.created_at || new Date().toISOString(),
+      });
+    }
     this.projects.set(profile.id, list);
     this.persist();
     return list;
   }
 
-  async updateCertifications(userId: string, certInputs: Omit<Certification, 'student_id'>[]): Promise<Certification[]> {
+  async updateCertifications(userId: string, certInputs: Partial<Omit<Certification, 'student_id'>>[]): Promise<Certification[]> {
     const profile = await this.getStudentProfileByUserId(userId);
     if (!profile) throw new Error('Student profile not found');
-    const list = certInputs.map((c) => ({ ...c, id: c.id || crypto.randomUUID(), student_id: profile.id }));
+    const list: Certification[] = [];
+    for (const c of certInputs) {
+      if (!c.name || !c.issuer || !c.date) continue;
+      list.push({
+        id: c.id || crypto.randomUUID(),
+        student_id: profile.id,
+        name: c.name,
+        issuer: c.issuer,
+        date: c.date,
+        credential_id: c.credential_id ?? null,
+        credential_url: c.credential_url ?? null,
+        expiry_date: c.expiry_date ?? null,
+      });
+    }
     this.certifications.set(profile.id, list);
     this.persist();
     return list;
   }
 
-  async updateExperiences(userId: string, expInputs: Omit<Experience, 'student_id'>[]): Promise<Experience[]> {
+  async updateExperiences(userId: string, expInputs: Partial<Omit<Experience, 'student_id'>>[]): Promise<Experience[]> {
     const profile = await this.getStudentProfileByUserId(userId);
     if (!profile) throw new Error('Student profile not found');
-    const list = expInputs.map((e) => ({ ...e, id: e.id || crypto.randomUUID(), student_id: profile.id }));
+    const list: Experience[] = [];
+    for (const e of expInputs) {
+      if (!e.org || !e.role || !e.duration || !e.description) continue;
+      list.push({
+        id: e.id || crypto.randomUUID(),
+        student_id: profile.id,
+        org: e.org,
+        role: e.role,
+        duration: e.duration,
+        location: e.location ?? null,
+        description: e.description,
+        key_contributions: e.key_contributions ?? null,
+      });
+    }
     this.experiences.set(profile.id, list);
     this.persist();
     return list;
   }
 
-  async updateAchievements(userId: string, achInputs: Omit<Achievement, 'student_id'>[]): Promise<Achievement[]> {
+  async updateAchievements(userId: string, achInputs: Partial<Omit<Achievement, 'student_id'>>[]): Promise<Achievement[]> {
     const profile = await this.getStudentProfileByUserId(userId);
     if (!profile) throw new Error('Student profile not found');
-    const list = achInputs.map((a) => ({ ...a, id: a.id || crypto.randomUUID(), student_id: profile.id }));
+    const list: Achievement[] = [];
+    for (const a of achInputs) {
+      if (!a.title || !a.description) continue;
+      list.push({
+        id: a.id || crypto.randomUUID(),
+        student_id: profile.id,
+        title: a.title,
+        description: a.description,
+        date: a.date ?? null,
+        issuing_body: a.issuing_body ?? null,
+      });
+    }
     this.achievements.set(profile.id, list);
     this.persist();
     return list;
@@ -874,12 +931,13 @@ class PrismaDBStore {
     return { id: s.id, name: s.name, category: s.category as any };
   }
 
-  async updateStudentSkills(userId: string, skillInputs: { name: string; category: Skill['category']; proficiency: StudentSkill['proficiency'] }[]): Promise<StudentSkill[]> {
+  async updateStudentSkills(userId: string, skillInputs: { name?: string; category?: Skill['category']; proficiency?: StudentSkill['proficiency'] }[]): Promise<StudentSkill[]> {
     const profile = await this.getStudentProfileByUserId(userId);
     if (!profile) throw new Error('Student profile not found');
     await prisma.studentSkill.deleteMany({ where: { student_id: profile.id } });
     const results: StudentSkill[] = [];
     for (const item of skillInputs) {
+      if (!item.name || !item.category || !item.proficiency) continue;
       const skill = await this.addOrGetSkill(item.name, item.category);
       const ss = await prisma.studentSkill.create({ data: { student_id: profile.id, skill_id: skill.id, proficiency: item.proficiency as any }, include: { skill: true } });
       results.push({ id: ss.id, student_id: ss.student_id, skill_id: ss.skill_id, skill: { id: ss.skill.id, name: ss.skill.name, category: ss.skill.category as any }, proficiency: ss.proficiency as any });
@@ -887,12 +945,13 @@ class PrismaDBStore {
     return results;
   }
 
-  async updateProjects(userId: string, projectInputs: Omit<Project, 'student_id'>[]): Promise<Project[]> {
+  async updateProjects(userId: string, projectInputs: Partial<Omit<Project, 'student_id'>>[]): Promise<Project[]> {
     const profile = await this.getStudentProfileByUserId(userId);
     if (!profile) throw new Error('Student profile not found');
     await prisma.project.deleteMany({ where: { student_id: profile.id } });
     const results: Project[] = [];
     for (const p of projectInputs) {
+      if (!p.title || !p.description || !p.role) continue;
       const techStack = Array.isArray(p.tech_stack) ? (p.tech_stack as string[]).join(', ') : String(p.tech_stack || '');
       const proj = await prisma.project.create({
         data: {
@@ -907,36 +966,39 @@ class PrismaDBStore {
     return results;
   }
 
-  async updateCertifications(userId: string, certInputs: Omit<Certification, 'student_id'>[]): Promise<Certification[]> {
+  async updateCertifications(userId: string, certInputs: Partial<Omit<Certification, 'student_id'>>[]): Promise<Certification[]> {
     const profile = await this.getStudentProfileByUserId(userId);
     if (!profile) throw new Error('Student profile not found');
     await prisma.certification.deleteMany({ where: { student_id: profile.id } });
     const results: Certification[] = [];
     for (const c of certInputs) {
+      if (!c.name || !c.issuer || !c.date) continue;
       const cert = await prisma.certification.create({ data: { student_id: profile.id, name: c.name, issuer: c.issuer, date: c.date, credential_id: c.credential_id || null, credential_url: c.credential_url || null, expiry_date: c.expiry_date || null } });
       results.push({ id: cert.id, student_id: cert.student_id, name: cert.name, issuer: cert.issuer, date: cert.date, credential_id: cert.credential_id ?? null, credential_url: cert.credential_url ?? null, expiry_date: cert.expiry_date ?? null });
     }
     return results;
   }
 
-  async updateExperiences(userId: string, expInputs: Omit<Experience, 'student_id'>[]): Promise<Experience[]> {
+  async updateExperiences(userId: string, expInputs: Partial<Omit<Experience, 'student_id'>>[]): Promise<Experience[]> {
     const profile = await this.getStudentProfileByUserId(userId);
     if (!profile) throw new Error('Student profile not found');
     await prisma.experience.deleteMany({ where: { student_id: profile.id } });
     const results: Experience[] = [];
     for (const e of expInputs) {
+      if (!e.org || !e.role || !e.duration || !e.description) continue;
       const exp = await prisma.experience.create({ data: { student_id: profile.id, org: e.org, role: e.role, duration: e.duration, location: e.location || null, description: e.description, key_contributions: e.key_contributions || null } });
       results.push({ id: exp.id, student_id: exp.student_id, org: exp.org, role: exp.role, duration: exp.duration, location: exp.location ?? null, description: exp.description, key_contributions: exp.key_contributions ?? null });
     }
     return results;
   }
 
-  async updateAchievements(userId: string, achInputs: Omit<Achievement, 'student_id'>[]): Promise<Achievement[]> {
+  async updateAchievements(userId: string, achInputs: Partial<Omit<Achievement, 'student_id'>>[]): Promise<Achievement[]> {
     const profile = await this.getStudentProfileByUserId(userId);
     if (!profile) throw new Error('Student profile not found');
     await prisma.achievement.deleteMany({ where: { student_id: profile.id } });
     const results: Achievement[] = [];
     for (const a of achInputs) {
+      if (!a.title || !a.description) continue;
       const ach = await prisma.achievement.create({ data: { student_id: profile.id, title: a.title, description: a.description, date: a.date || null, issuing_body: a.issuing_body || null } });
       results.push({ id: ach.id, student_id: ach.student_id, title: ach.title, description: ach.description, date: ach.date ?? null, issuing_body: ach.issuing_body ?? null });
     }
