@@ -61,7 +61,7 @@ function isTestOrDemoArtifact(regNo: string, email: string): boolean {
 }
 
 export async function getFilteredStudents(params: PlacementFilterParams): Promise<StudentProfile[]> {
-  const users = Array.from((db as any).users.values()).filter((u: any) => u.role === 'STUDENT');
+  const users = Array.from<any>((db as any).users.values()).filter((u: any) => u.role === 'STUDENT');
   const seenRegs = new Set<string>();
   const matchingProfiles: StudentProfile[] = [];
 
@@ -78,7 +78,7 @@ export async function getFilteredStudents(params: PlacementFilterParams): Promis
     if (!profile) continue;
 
     // Attach user email & details
-    profile.user = user;
+    (profile as any).user = user;
 
     // 1. Department Filter
     if (params.department && params.department !== 'ALL') {
@@ -137,7 +137,7 @@ export async function getFilteredStudents(params: PlacementFilterParams): Promis
 }
 
 export async function getPlacementStats(): Promise<AggregateStats> {
-  const users = Array.from((db as any).users.values()).filter((u: any) => u.role === 'STUDENT');
+  const users = Array.from<any>((db as any).users.values()).filter((u: any) => u.role === 'STUDENT');
   const seenRegs = new Set<string>();
   const validProfiles: StudentProfile[] = [];
 
@@ -338,7 +338,7 @@ export function generateShortlistCsv(profiles: StudentProfile[]): string {
       `"${p.education?.twelfth_board || 'N/A'}"`,
       `"${p.education?.current_degree || ''} in ${p.education?.specialization || ''}"`,
       p.education?.expected_graduation_year || 'N/A',
-      `"${p.user?.college_email || ''}"`,
+      `"${(p as any).user?.college_email || ''}"`,
       `"${p.personal_email || ''}"`,
       `"${p.phone || ''}"`,
       `"${skillsStr}"`,
