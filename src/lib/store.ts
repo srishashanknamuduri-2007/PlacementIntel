@@ -490,27 +490,32 @@ class InMemoryStore {
   }
 
   async updateEducation(
-  userId: string,
-  data: Partial<Omit<Education, 'id' | 'student_id'>>
-): Promise<Education> {
-  const profile = await this.getStudentProfileByUserId(userId);
-  if (!profile) throw new Error('Student profile not found');
+    userId: string,
+    data: Partial<Omit<Education, 'id' | 'student_id'>>
+  ): Promise<Education> {
+    const profile = await this.getStudentProfileByUserId(userId);
+    if (!profile) throw new Error('Student profile not found');
 
-  const existing = this.educations.get(profile.id);
+    const existing = this.educations.get(profile.id);
+    const merged = { ...(existing || {}), ...data } as Partial<Education>;
 
-  const edu: Education = {
-    id: existing?.id || crypto.randomUUID(),
-    student_id: profile.id,
-    ...(existing || {}),
-    ...data,
-  };
+    const edu: Education = {
+      id: existing?.id || crypto.randomUUID(),
+      student_id: profile.id,
+      tenth_percentage: Number(merged.tenth_percentage ?? 0),
+      tenth_board: merged.tenth_board ?? '',
+      twelfth_percentage_or_diploma_details: merged.twelfth_percentage_or_diploma_details ?? '',
+      twelfth_board: merged.twelfth_board ?? '',
+      current_degree: merged.current_degree ?? '',
+      specialization: merged.specialization ?? '',
+      expected_graduation_year: Number(merged.expected_graduation_year ?? 0),
+    };
 
-  this.educations.set(profile.id, edu);
-  this.persist();
+    this.educations.set(profile.id, edu);
+    this.persist();
 
-  return edu;
-}
-
+    return edu;
+  }
 
   async updateSemesterCGPAs(userId: string, semesters: Partial<Omit<SemesterCGPA, 'id' | 'student_id'>>[]): Promise<SemesterCGPA[]> {
     const profile = await this.getStudentProfileByUserId(userId);
@@ -908,11 +913,10 @@ class PrismaDBStore {
     return { id: edu.id, student_id: edu.student_id, tenth_percentage: edu.tenth_percentage, tenth_board: edu.tenth_board, twelfth_percentage_or_diploma_details: edu.twelfth_percentage_or_diploma_details, twelfth_board: edu.twelfth_board, current_degree: edu.current_degree, specialization: edu.specialization, expected_graduation_year: edu.expected_graduation_year };
   }
 
-    async updateSemesterCGPAs(
+  async updateSemesterCGPAs(
     userId: string,
     semesters: Partial<Omit<SemesterCGPA, 'id' | 'student_id'>>[]
-    ): Promise<SemesterCGPA[]> {
-
+  ): Promise<SemesterCGPA[]> {
     const profile = await this.getStudentProfileByUserId(userId);
     if (!profile) throw new Error('Student profile not found');
     await prisma.semesterCGPA.deleteMany({ where: { student_id: profile.id } });
