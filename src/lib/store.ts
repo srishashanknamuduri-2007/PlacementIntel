@@ -835,7 +835,7 @@ class PrismaDBStore {
     return (await this.getStudentProfileByUserId(profile.user_id, profile.register_number))!;
   }
 
-  async updateEducation(userId: string, data: Omit<Education, 'id' | 'student_id'>): Promise<Education> {
+  async updateEducation(userId: string, data: Partial<Omit<Education, 'id' | 'student_id'>>): Promise<Education> {
     const profile = await this.getStudentProfileByUserId(userId);
     if (!profile) throw new Error('Student profile not found');
     const edu = await prisma.education.upsert({
