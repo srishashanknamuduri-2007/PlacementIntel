@@ -846,7 +846,11 @@ class PrismaDBStore {
     return { id: edu.id, student_id: edu.student_id, tenth_percentage: edu.tenth_percentage, tenth_board: edu.tenth_board, twelfth_percentage_or_diploma_details: edu.twelfth_percentage_or_diploma_details, twelfth_board: edu.twelfth_board, current_degree: edu.current_degree, specialization: edu.specialization, expected_graduation_year: edu.expected_graduation_year };
   }
 
-  async updateSemesterCGPAs(userId: string, semesters: Omit<SemesterCGPA, 'id' | 'student_id'>[]): Promise<SemesterCGPA[]> {
+    async updateSemesterCGPAs(
+    userId: string,
+    semesters: Partial<Omit<SemesterCGPA, 'id' | 'student_id'>>[]
+    ): Promise<SemesterCGPA[]> {
+
     const profile = await this.getStudentProfileByUserId(userId);
     if (!profile) throw new Error('Student profile not found');
     await prisma.semesterCGPA.deleteMany({ where: { student_id: profile.id } });
