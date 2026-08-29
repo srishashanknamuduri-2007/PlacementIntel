@@ -512,10 +512,15 @@ class InMemoryStore {
 }
 
 
-  async updateSemesterCGPAs(userId: string, semesters: Omit<SemesterCGPA, 'id' | 'student_id'>[]): Promise<SemesterCGPA[]> {
+  async updateSemesterCGPAs(userId: string, semesters: Partial<Omit<SemesterCGPA, 'id' | 'student_id'>>[]): Promise<SemesterCGPA[]> {
     const profile = await this.getStudentProfileByUserId(userId);
     if (!profile) throw new Error('Student profile not found');
-    const items = semesters.map((s) => ({ id: crypto.randomUUID(), student_id: profile.id, ...s }));
+    const items = semesters.map((s) => ({
+      id: crypto.randomUUID(),
+      student_id: profile.id,
+      semester_number: Number(s.semester_number),
+      cgpa: Number(s.cgpa),
+    }));
     this.semesterCgpas.set(profile.id, items);
     this.persist();
     return items;
